@@ -1,0 +1,14 @@
+{
+  "include": [
+    "."
+  ],
+  "exclude": [
+    "**/__pycache__"
+  ],
+  "extraPaths": [
+    ".",
+    "venv/Lib/site-packages"
+  ],
+  "reportMissingTypeStubs": false,
+  "pythonPlatform": "Windows"
+}

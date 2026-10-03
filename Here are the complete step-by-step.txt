@@ -1,0 +1,67 @@
+Here are the complete step-by-step instructions and commands to set up and run the Security Guard Information Management and Monitoring System across all components:
+
+ Backend (Django REST Framework API)-
+# 1. Navigate to backend directory
+cd backend
+
+# 2. Create and activate a Python virtual environment
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+# (If using CMD: venv\Scripts\activate.bat | If macOS/Linux: source venv/bin/activate)
+
+# 3. Install Python dependencies
+pip install -r requirements.txt
+
+# 4. Create your .env configuration
+Copy-Item .env.example .env
+# (If CMD: copy .env.example .env | If bash: cp .env.example .env)
+
+# 5. Apply database migrations
+python manage.py migrate
+
+# 6. Seed demo users, locations, and schedules
+python manage.py seed_demo
+
+# 7. Start the backend server
+python manage.py runserver
+
+
+** note ** backend url: http://localhost:8000
+           swagger interactive API Docs: http://localhost:8000/api/docs/
+           Django Admin: http://localhost:8000/admin/
+
+
+
+// for Web dashboard (admin & supervior )
+# 1. Navigate to web directory
+cd web
+
+# 2. Install dependencies
+npm install
+
+# 3. Start Vite development server
+npm run dev
+
+
+web Dashboard URL: http://localhost:5173
+
+
+4. Mobile Application (Guard App - Expo / React Native)
+# 1. Navigate to mobile directory
+cd mobile
+
+# 2. Install dependencies
+npm install
+
+# 3. Start Expo development server
+npm run start
+
+
+
+# Run backend test suite (from /backend with venv active)
+pytest
+
+# Run PRD Section 17 UI rule compliance checker (from project root)
+python scripts/check_ui_rules.py
+
+
