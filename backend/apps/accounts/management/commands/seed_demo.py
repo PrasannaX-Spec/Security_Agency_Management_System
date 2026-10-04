@@ -171,6 +171,7 @@ class Command(BaseCommand):
         ]
 
         locations = []
+        posts_by_location = {}
         for name, client_obj, address, lat, lng in locations_data:
             loc = Location.objects.create(
                 name=name,
@@ -183,16 +184,17 @@ class Command(BaseCommand):
             locations.append(loc)
 
             # Create 2 posts per location
-            Post.objects.create(
+            p1 = Post.objects.create(
                 name="Main Entrance Gate",
                 location=loc,
                 required_guard_count=2,
             )
-            Post.objects.create(
+            p2 = Post.objects.create(
                 name="Visitor Control Post",
                 location=loc,
                 required_guard_count=1,
             )
+            posts_by_location[loc.id] = [p1, p2]
 
         self.stdout.write("Assigning supervisors to locations...")
         for loc in locations[:3]:
@@ -208,18 +210,33 @@ class Command(BaseCommand):
             day = start_of_week + timedelta(days=day_offset)
             for idx, guard in enumerate(guards):
                 loc = locations[idx % len(locations)]
+                loc_posts = posts_by_location[loc.id]
+                post = loc_posts[idx % len(loc_posts)]
                 # Day shift: 08:00 - 20:00
                 DutySchedule.objects.create(
                     guard=guard,
+                    client=loc.client,
                     location=loc,
+                    post=post,
                     shift_start=day + timedelta(hours=8),
                     shift_end=day + timedelta(hours=20),
                     status=DutySchedule.Status.SCHEDULED,
                     created_by=admin,
                 )
 
-        # Verify no overlapping shifts exist (PRD audit requirement).
+        # Verify no overlapping shifts exist and all relationships are intact
         from django.db.models import Q
+
+        missing_clients = DutySchedule.objects.filter(client__isnull=True).count()
+        missing_posts = DutySchedule.objects.filter(post__isnull=True).count()
+        if missing_clients > 0 or missing_posts > 0:
+            self.stderr.write(
+                self.style.ERROR(
+                    f"Integrity check failed: {missing_clients} missing clients, {missing_posts} missing posts."
+                )
+            )
+        else:
+            self.stdout.write("Relationship check passed: All schedules have valid Client and Post.")
 
         overlap_count = 0
         for schedule in DutySchedule.objects.all():
