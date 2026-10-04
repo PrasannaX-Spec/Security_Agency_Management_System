@@ -4,8 +4,9 @@ import pytest
 from rest_framework.test import APIClient
 
 from apps.accounts.models import User
+from apps.clients.models import Client
 from apps.guards.models import Guard
-from apps.locations.models import Location, SupervisorAssignment
+from apps.locations.models import Location, Post, SupervisorAssignment
 
 
 @pytest.fixture
@@ -85,3 +86,24 @@ def supervisor_with_assignment(supervisor_user, location_a):
         supervisor=supervisor_user, location=location_a
     )
     return supervisor_user
+
+
+@pytest.fixture
+def schedule_setup(db, guard_profile, admin_user):
+    client = Client.objects.create(
+        company_name="Metro Corp",
+        contact_person="Bob",
+        phone="2223334444",
+        email="bob@metro.local",
+        user=admin_user,
+    )
+    loc = Location.objects.create(
+        name="Metro Yard",
+        client=client,
+        address="100 Metro Rd",
+        latitude="17.44",
+        longitude="78.37",
+        radius_m=100,
+    )
+    post = Post.objects.create(name="Entry Gate", location=loc, required_guard_count=1)
+    return client, loc, post, guard_profile, admin_user

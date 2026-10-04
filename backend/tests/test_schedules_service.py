@@ -10,28 +10,8 @@ from apps.schedules.services import ScheduleService
 from apps.schedules.exceptions import ScheduleConflictError
 
 
-@pytest.fixture
-def schedule_setup(db, guard_profile, admin_user):
-    client = Client.objects.create(
-        company_name="Metro Corp",
-        contact_person="Bob",
-        phone="2223334444",
-        email="bob@metro.local",
-        user=admin_user,
-    )
-    loc = Location.objects.create(
-        name="Metro Yard",
-        client=client,
-        address="100 Metro Rd",
-        latitude="17.44",
-        longitude="78.37",
-        radius_m=100,
-    )
-    post = Post.objects.create(name="Entry Gate", location=loc, required_guard_count=1)
-    return client, loc, post, guard_profile, admin_user
-
-
 @pytest.mark.django_db
+
 def test_create_schedule_success(schedule_setup):
     client, loc, post, guard, admin = schedule_setup
     now = timezone.now().replace(minute=0, second=0, microsecond=0)
