@@ -1,7 +1,7 @@
-# Security Guard Monitoring System — Implementation Progress
+# Security Guard Monitoring System - Implementation Progress
 
 > **Last Updated:** October 4, 2026  
-> **Current Status:** Phase 3 (Master Data Management) Complete · Ready for Phase 4
+> **Current Status:** Phase 4 (Duty Scheduling) Complete · Ready for Phase 5
 
 ---
 
@@ -12,7 +12,8 @@
 | **Phase 1** | **Foundation & Architecture** (Auth, Models, UI Shells, Legal, Tests) | **COMPLETED** | **100%** |
 | **Phase 2** | **Foundation Extension (Gap Closing)** (CLIENT Role, Client/Post/Supervisor Models, Dynamic Mobile Role Router, Wage Fields, Shell Pages) | **COMPLETED** | **100%** |
 | **Phase 3** | **Master Data Management** (Guards, Supervisors, Clients, Sites, Posts CRUD & Web UI) | **COMPLETED** | **100%** |
-| **Phase 4** | **Duty Scheduling** (Shift Assignments & Overlap Prevention) | *Next* | 0% |
+| **Phase 4** | **Duty Scheduling** (Shift Assignments, Row Locking, Overlap Prevention, Timeline & Mobile Feeds) | **COMPLETED** | **100%** |
+| **Phase 5** | **Attendance & Geofencing** (GPS Check-In / Out, Haversine Verification) | *Next* | 0% |
 
 ---
 
@@ -78,20 +79,56 @@
 
 ---
 
-## Next Steps: Phase 4 Roadmap
+## Phase 4: Duty Scheduling Breakdown (100% Completed)
 
-1. **Shift Management & Overlap Prevention (Backend + Web):**
-   - Admin shift scheduler with automatic double-booking prevention.
-   - Guard & Location assignment workflows.
-2. **Duty Schedule Feed (Mobile):**
-   - Live retrieval of assigned shifts on `MyDutiesScreen`.
-3. **Geofenced Check-In & Check-Out (Backend + Mobile):**
-   - Haversine distance calculation against site coordinates and radius.
-   - Shift check-in status validation and attendance record creation.
+### 1. Data Model & PostgreSQL Row Locking
+- [x] **Schema Enhancements:** Extended `DutySchedule` with `client`, `post`, `status` (`SCHEDULED`, `COMPLETED`, `CANCELLED`), and compound indexes (`guard + shift_start`, `location + shift_start`, `status + shift_start`). Migration applied to PostgreSQL.
+- [x] **Transactional Service (`ScheduleService`):** Implemented row-level locking via `select_for_update()` on target Guard within `transaction.atomic()`.
+- [x] **Overlap Prevention Formula:** Strict validation enforcing `shift_start < new_end AND shift_end > new_start` across active `SCHEDULED` shifts of the same guard.
+- [x] **HTTP 409 Conflict Response:** Returns structured conflict details (conflicting schedule ID, location, post, and shift bounds) with code `SCHEDULE_CONFLICT`.
+- [x] **Advisory Capacity Warnings:** Post-commit capacity calculation comparing active scheduled guards against `Post.required_guard_count` returning non-blocking advisory warnings.
+- [x] **PostgreSQL Concurrency Test:** Multi-threaded concurrency integration test (`test_schedules_concurrency.py`) verifying exactly 1 success and 1 `ScheduleConflictError` under race conditions on PostgreSQL.
+
+### 2. REST API & Server-Side Role Scoping
+- [x] **List & Create (`/api/schedules/`):** Full list and creation endpoint with server-side role scoping (Supervisors scoped to assigned sites, Clients scoped to owned sites, Guards forbidden).
+- [x] **Detail & Update (`/api/schedules/<id>/`):** Detail retrieval and partial update with supervisor boundary validation and Client write restriction.
+- [x] **Cancel Endpoint (`/api/schedules/<id>/cancel/`):** Dedicated atomic shift cancellation for Admins and Supervisors.
+- [x] **Mobile Guard Feed (`/api/schedules/my/`):** Guard-specific endpoint returning active and future scheduled duties sorted chronologically.
+
+### 3. Web Console Scheduler (`SchedulesPage.jsx`)
+- [x] **API Client (`web/src/api/schedules.js`):** Axios client covering all schedule CRUD operations.
+- [x] **Hybrid Views:** Table view with sortable columns, duration computation, status badges, and action triggers; 24-hour horizontal bar Timeline view grouped by Site and Post.
+- [x] **Cascading Modal:** 5-step modal (Client -> Location -> Post -> Guard -> Shift Times) with post capacity guidance and guard status hints.
+- [x] **Inline Conflict & Advisory Alerts:** Red conflict banner detailing overlapping shifts; amber advisory toast for over-capacity shifts.
+- [x] **Shift Cancellation Dialog:** Confirmation modal triggering atomic schedule cancellation.
+
+### 4. Mobile Guard Application (`MyDutiesScreen.js`)
+- [x] **API Client (`mobile/src/api/schedules.js`):** `getMyDuties()` client calling `/api/schedules/my/`.
+- [x] **Active Shift Detection:** Precision detection (`shift_start <= now < shift_end`) highlighting current shift in dedicated card with time remaining counter.
+- [x] **Upcoming Schedule Feed:** Chronologically ordered upcoming shift cards with date badges, site/post details, and client indicators.
+- [x] **Empty State & Controls:** Pull-to-refresh (`RefreshControl`), error banner with retry trigger, and clear empty state.
+
+### 5. Quality & Verification
+- [x] **Backend Automated Tests:** 38 passed, 0 failed across full test suite (`100%` pass rate).
+- [x] **UI Rule Checker (`scripts/check_ui_rules.py`):** **0 Failures** over 60 scanned project files.
+- [x] **Database Seed Integrity:** Seed demo seeder verified: 105 shifts across 15 guards and 5 locations with valid Client -> Location -> Post -> Guard relationships and 0 conflicts.
 
 ---
 
-## Quick Reference — Running Services
+## Next Steps: Phase 5 Roadmap
+
+1. **Geofenced Check-In & Check-Out (Backend + Mobile):**
+   - Haversine distance computation against location coordinates and radius.
+   - Guard shift check-in and check-out validation with timestamps.
+   - Creation and tracking of Attendance records linked to DutySchedule.
+2. **Attendance Management (Web Console):**
+   - Admin and supervisor attendance log viewer with status indicators (On Duty, Completed, Late, Absent).
+3. **Automated Concurrency & Geofence Tests:**
+   - GPS boundary edge cases and check-in audit trails.
+
+---
+
+## Quick Reference - Running Services
 
 | Service | Command | URL / Port |
 | :--- | :--- | :--- |

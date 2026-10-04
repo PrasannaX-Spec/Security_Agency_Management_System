@@ -77,7 +77,7 @@ Current status: Phase 3 (Master Data Management) Complete. Ready for Phase 4 (Du
 | Phase 1 | Foundation & Architecture (Auth, Models, UI Shells, Legal, Tests) | Completed | 100% |
 | Phase 2 | Foundation Extension (CLIENT Role, Client/Post/Supervisor Models, Wage Fields, Multi-Role Router) | Completed | 100% |
 | Phase 3 | Master Data Management (Guards, Supervisors, Clients, Sites, Posts CRUD & Web UI) | Completed | 100% |
-| Phase 4 | Duty Scheduling (Shift Assignments & Overlap Prevention) | Next | 0% |
+| Phase 4 | Duty Scheduling (Shift Assignments, Row Locking, Overlap Prevention, Timeline & Mobile Feeds) | Completed | 100% |
 | Phases 5-12 | Attendance, Tracking, Monitoring, Incidents, Payroll, Invoicing, Release | Planned | 0% |
 
 ### Delivered Milestones Summary
@@ -85,24 +85,27 @@ Current status: Phase 3 (Master Data Management) Complete. Ready for Phase 4 (Du
 1. Backend Architecture:
    - 12 modular Django apps with custom RBAC supporting ADMIN, SUPERVISOR, CLIENT, and GUARD roles.
    - JWT authentication endpoints with automatic refresh, current user profile, and terms acceptance tracking.
-   - PostgreSQL / SQLite relational models with soft delete statuses, supervisor-to-site assignments, and duty posts.
+   - PostgreSQL relational models with soft delete statuses, supervisor-to-site assignments, and duty posts.
    - Master data REST API endpoints with pagination envelope ({success, data, error}), search, status filtering, and atomic user creation.
-   - Automated pytest suite passing with 30 unit and integration tests.
+   - Duty scheduling service with PostgreSQL row-level locking (select_for_update), overlap rejection (shift_start < new_end AND shift_end > new_start), HTTP 409 conflict responses, and advisory capacity warnings.
+   - Automated pytest suite passing with 38 unit and integration tests (including multi-threaded concurrency).
 
 2. Web Console (Admin & Supervisor):
    - Full master data CRUD interfaces for Guards, Clients, Site Locations, Duty Posts, and Supervisors.
    - Interactive modals for creation, editing, status toggling, deactivation, and supervisor site assignment.
-   - Loading states, error states, and empty states displaying "No data yet".
+   - Duty scheduling management interface with sortable table view and 24-hour horizontal bar timeline view.
+   - Cascading New Shift modal (Client -> Location -> Post -> Guard) with inline conflict detection alerts and advisory over-capacity toasts.
    - DemoDataBadge indicator for seeded records.
    - Public versioned Terms and Privacy Policy views at /terms and /privacy.
 
 3. Mobile Application (React Native & Expo):
    - Dynamic multi-role router switching interface layout based on user role.
    - Live guard profile view connected to backend auth endpoint.
+   - Assigned duties screen (MyDutiesScreen) with active shift detection (shift_start <= now < shift_end), time remaining countdown, chronological upcoming shifts, and pull-to-refresh.
    - Safe-area compliance, foreground/background GPS permissions, and consent screen flow.
 
 4. Quality and Compliance:
-   - scripts/check_ui_rules.py reports 0 failures across 58 scanned project files.
+   - scripts/check_ui_rules.py reports 0 failures across 60 scanned project files.
    - Interactive OpenAPI documentation available at /api/docs/.
 
 ## Default Seeded Credentials
