@@ -5,7 +5,7 @@ from django.db import models
 
 
 class DutySchedule(models.Model):
-    """A scheduled shift: guard + location + time window."""
+    """A scheduled shift: guard + client + location + post + time window."""
 
     class Status(models.TextChoices):
         SCHEDULED = "SCHEDULED", "Scheduled"
@@ -15,8 +15,17 @@ class DutySchedule(models.Model):
     guard = models.ForeignKey(
         "guards.Guard", on_delete=models.CASCADE, related_name="schedules"
     )
+    client = models.ForeignKey(
+        "clients.Client", on_delete=models.CASCADE, related_name="schedules"
+    )
     location = models.ForeignKey(
-        "locations.Location", on_delete=models.CASCADE, related_name="schedules"
+        "locations.Location",
+        on_delete=models.CASCADE,
+        related_name="schedules",
+        verbose_name="Site Location",
+    )
+    post = models.ForeignKey(
+        "locations.Post", on_delete=models.CASCADE, related_name="schedules"
     )
     shift_start = models.DateTimeField()
     shift_end = models.DateTimeField()
@@ -35,7 +44,9 @@ class DutySchedule(models.Model):
     class Meta:
         db_table = "duty_schedules"
         indexes = [
-            models.Index(fields=["guard", "shift_start", "shift_end"]),
+            models.Index(fields=["guard", "shift_start", "shift_end"], name="duty_sched_guard_time_idx"),
+            models.Index(fields=["location", "shift_start"], name="duty_sched_loc_time_idx"),
+            models.Index(fields=["status", "shift_start"], name="duty_sched_status_time_idx"),
         ]
 
     def __str__(self):
