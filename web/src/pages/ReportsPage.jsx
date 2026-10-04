@@ -24,9 +24,9 @@ export default function ReportsPage() {
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-md bg-background text-text-muted mb-3">
           <FileText size={24} />
         </div>
-        <div className="text-sm font-medium text-text">Reports and Analytics Shell</div>
+        <div className="text-sm font-medium text-text">Reports and Analytics</div>
         <div className="text-xs text-text-muted mt-1 max-w-sm mx-auto">
-          Attendance summaries and shift completion metrics will be linked in Phase 3.
+          No data yet
         </div>
       </div>
     </div>

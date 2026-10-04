@@ -24,9 +24,9 @@ export default function LiveMapPage() {
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-md bg-background text-text-muted mb-3">
           <MapPin size={24} />
         </div>
-        <div className="text-sm font-medium text-text">Live Map Console Shell</div>
+        <div className="text-sm font-medium text-text">Live Map Console</div>
         <div className="text-xs text-text-muted mt-1 max-w-sm mx-auto">
-          Leaflet map with active guard markers and geofence polygons will be linked in Phase 3.
+          No data yet
         </div>
       </div>
     </div>

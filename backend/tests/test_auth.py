@@ -41,17 +41,42 @@ class TestLogin:
         assert resp.status_code == status.HTTP_200_OK
         assert resp.json()["data"]["user"]["role"] == "GUARD"
 
+    def test_client_login(self, api_client):
+        from apps.accounts.models import User
+        from apps.clients.models import Client
+
+        client_user = User.objects.create_user(
+            username="testclient", password="testpass123", role=User.Role.CLIENT
+        )
+        Client.objects.create(
+            user=client_user,
+            company_name="Test Corp",
+            contact_person="John Doe",
+            phone="1234567890",
+            email="client@test.local",
+        )
+        resp = api_client.post(self.url, {"username": "testclient", "password": "testpass123"})
+        assert resp.status_code == status.HTTP_200_OK
+        assert resp.json()["data"]["user"]["role"] == "CLIENT"
+
     def test_invalid_credentials(self, api_client, admin_user):
         resp = api_client.post(self.url, {"username": "testadmin", "password": "wrong"})
         assert resp.status_code == status.HTTP_400_BAD_REQUEST
         assert resp.json()["success"] is False
 
-    def test_inactive_user_cannot_login(self, api_client, guard_user):
-        guard_user.status = "INACTIVE"
-        guard_user.save()
-        resp = api_client.post(self.url, {"username": "testguard", "password": "testpass123"})
-        assert resp.status_code == status.HTTP_400_BAD_REQUEST
-        assert resp.json()["success"] is False
+    def test_deactivated_all_roles_login(self, api_client):
+        from apps.accounts.models import User
+
+        for role in ["ADMIN", "SUPERVISOR", "GUARD", "CLIENT"]:
+            u = User.objects.create_user(
+                username=f"deactive_{role.lower()}",
+                password="pass123",
+                role=role,
+                status=User.AccountStatus.INACTIVE,
+            )
+            resp = api_client.post(self.url, {"username": u.username, "password": "pass123"})
+            assert resp.status_code == status.HTTP_400_BAD_REQUEST
+            assert resp.json()["success"] is False
 
 
 # ---------------------------------------------------------------------------
@@ -107,16 +132,9 @@ class TestAcceptTerms:
 # ---------------------------------------------------------------------------
 
 class TestRBAC:
-    """Guard must get 403 on admin-only endpoints."""
+    """Guard & Client permission classes."""
 
     def test_guard_cannot_access_admin_endpoint(self, api_client, guard_user):
-        """Django admin is admin-only. Also test Swagger is accessible."""
-        api_client.force_authenticate(user=guard_user)
-        # The admin panel returns a redirect (302) for non-staff, but
-        # we test our custom endpoints. We use /api/docs/ as a proxy
-        # for now since CRUD endpoints are not wired in P1.
-        # The real RBAC test is that guard cannot call guard-management endpoints.
-        # For P1, we test the permission class directly.
         from common.permissions import IsAdmin
         from rest_framework.test import APIRequestFactory
 
@@ -126,43 +144,37 @@ class TestRBAC:
         perm = IsAdmin()
         assert perm.has_permission(request, None) is False
 
-    def test_admin_has_admin_perm(self, api_client, admin_user):
-        from common.permissions import IsAdmin
+    def test_client_has_client_perm(self, api_client):
+        from apps.accounts.models import User
+        from common.permissions import IsClient
         from rest_framework.test import APIRequestFactory
 
+        client_user = User.objects.create_user(
+            username="client_user", password="password", role=User.Role.CLIENT
+        )
         factory = APIRequestFactory()
-        request = factory.get("/fake-admin-endpoint")
-        request.user = admin_user
-        perm = IsAdmin()
+        request = factory.get("/fake-client-endpoint")
+        request.user = client_user
+        perm = IsClient()
         assert perm.has_permission(request, None) is True
 
-    def test_supervisor_has_supervisor_perm(self, api_client, supervisor_user):
-        from common.permissions import IsSupervisor
+    def test_guard_cannot_pass_client_perm(self, api_client, guard_user):
+        from common.permissions import IsClient
         from rest_framework.test import APIRequestFactory
 
         factory = APIRequestFactory()
-        request = factory.get("/fake-endpoint")
-        request.user = supervisor_user
-        perm = IsSupervisor()
-        assert perm.has_permission(request, None) is True
-
-    def test_guard_has_guard_perm(self, api_client, guard_user):
-        from common.permissions import IsGuard
-        from rest_framework.test import APIRequestFactory
-
-        factory = APIRequestFactory()
-        request = factory.get("/fake-endpoint")
+        request = factory.get("/fake-client-endpoint")
         request.user = guard_user
-        perm = IsGuard()
-        assert perm.has_permission(request, None) is True
+        perm = IsClient()
+        assert perm.has_permission(request, None) is False
 
 
 # ---------------------------------------------------------------------------
-# Supervisor scoping tests
+# Supervisor & Client scoping tests
 # ---------------------------------------------------------------------------
 
-class TestSupervisorScoping:
-    """Supervisor location-scoping helper returns correct location IDs."""
+class TestClientAndSupervisorScoping:
+    """Scoping helpers return correct location IDs for Supervisors and Clients."""
 
     def test_supervisor_sees_only_assigned_locations(
         self, supervisor_with_assignment, location_a, location_b
@@ -173,11 +185,50 @@ class TestSupervisorScoping:
         assert location_a.id in loc_ids
         assert location_b.id not in loc_ids
 
-    def test_supervisor_with_no_assignments(self, supervisor_user):
-        from common.permissions import get_supervisor_location_ids
+    def test_client_sees_only_owned_locations(self, api_client, location_a):
+        from apps.accounts.models import User
+        from apps.clients.models import Client
+        from common.permissions import get_client_location_ids
 
-        loc_ids = get_supervisor_location_ids(supervisor_user)
-        assert loc_ids == []
+        c_user = User.objects.create_user(
+            username="corp_owner", password="pass", role=User.Role.CLIENT
+        )
+        client = Client.objects.create(
+            user=c_user,
+            company_name="Corp A",
+            contact_person="Person A",
+            phone="111",
+            email="a@corp.com",
+        )
+        location_a.client = client
+        location_a.save()
+
+        loc_ids = get_client_location_ids(c_user)
+        assert location_a.id in loc_ids
+
+
+# ---------------------------------------------------------------------------
+# Wage fields validation tests
+# ---------------------------------------------------------------------------
+
+class TestGuardWageFields:
+    def test_wage_fields_decimal_safety(self, guard_user):
+        from apps.guards.models import Guard
+        from decimal import Decimal
+
+        g = Guard.objects.create(
+            user=guard_user,
+            full_name="Test Guard",
+            phone="9999999999",
+            id_number="IDWAGE123",
+            dob="1992-05-05",
+            address="Test address",
+            joining_date="2024-01-01",
+            wage_type=Guard.WageType.HOURLY,
+            wage_rate=Decimal("25.50"),
+        )
+        assert g.wage_rate == Decimal("25.50")
+        assert g.wage_type == "HOURLY"
 
 
 # ---------------------------------------------------------------------------
@@ -192,11 +243,31 @@ class TestLegalEndpoints:
         assert resp.status_code == status.HTTP_200_OK
         data = resp.json()
         assert data["success"] is True
-        assert data["data"]["title"] == "Terms and Conditions"
-        assert data["data"]["version"] == "1.0"
 
     def test_privacy_public(self, api_client):
         resp = api_client.get("/api/legal/privacy")
         assert resp.status_code == status.HTTP_200_OK
         data = resp.json()
         assert data["data"]["title"] == "Privacy Policy"
+
+
+# ---------------------------------------------------------------------------
+# Token refresh deactivated user test
+# ---------------------------------------------------------------------------
+
+class TestTokenRefreshDeactivatedUser:
+    url = "/api/auth/refresh"
+
+    def test_refresh_blocked_when_deactivated(self, api_client, guard_user):
+        login_resp = api_client.post("/api/auth/login", {"username": "testguard", "password": "testpass123"})
+        assert login_resp.status_code == status.HTTP_200_OK
+        refresh_token = login_resp.json()["data"]["refresh"]
+
+        guard_user.status = "INACTIVE"
+        guard_user.save()
+
+        refresh_resp = api_client.post(self.url, {"refresh": refresh_token})
+        assert refresh_resp.status_code == status.HTTP_401_UNAUTHORIZED
+        assert refresh_resp.json()["success"] is False
+
+

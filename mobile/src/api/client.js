@@ -1,9 +1,26 @@
 import axios from 'axios';
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 import { getItem, setItem, deleteItem } from '../services/storage';
 
-const envUrl = process.env.EXPO_PUBLIC_API_URL;
-const BASE_URL = envUrl || (Platform.OS === 'android' ? 'http://10.0.2.2:8000/api' : 'http://localhost:8000/api');
+// Extract Metro dev server host IP dynamically if available via Expo Go / Metro
+const hostUri = Constants.expoConfig?.hostUri || Constants.manifest2?.extra?.expoGo?.debuggerHost || Constants.manifest?.debuggerHost;
+const metroHost = hostUri ? hostUri.split(':')[0] : null;
+
+const getBaseUrl = () => {
+  if (metroHost) {
+    return `http://${metroHost}:8000/api`;
+  }
+  if (process.env.EXPO_PUBLIC_API_URL) {
+    return process.env.EXPO_PUBLIC_API_URL;
+  }
+  if (Platform.OS === 'android') {
+    return 'http://10.0.2.2:8000/api';
+  }
+  return 'http://localhost:8000/api';
+};
+
+const BASE_URL = getBaseUrl();
 
 const api = axios.create({
   baseURL: BASE_URL,

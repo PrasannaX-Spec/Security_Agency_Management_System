@@ -80,7 +80,7 @@ export default function AdminDashboard() {
       <div className="bg-surface rounded-lg border border-border p-6">
         <h2 className="text-sm font-semibold text-text mb-3">System Foundation Status</h2>
         <div className="space-y-2 text-xs text-text-muted">
-          <p>Phase 1 foundation is operational. The PostgreSQL database is seeded with demo accounts, locations, and duty shifts.</p>
+          <p>Phase 1 & Phase 2 foundation extensions are operational. The database is seeded with demo admins, supervisors, clients, guards, locations, duty posts, and shifts.</p>
           <p>Use the navigation menu to browse management sections or review legal policies.</p>
         </div>
       </div>

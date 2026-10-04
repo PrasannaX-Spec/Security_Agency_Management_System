@@ -18,6 +18,9 @@ import PanicScreen from '../screens/PanicScreen';
 import QuickRequestsScreen from '../screens/QuickRequestsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 
+import SupervisorDashboardScreen from '../screens/SupervisorDashboardScreen';
+import ClientDashboardScreen from '../screens/ClientDashboardScreen';
+
 import {
   Calendar,
   MapPin,
@@ -25,53 +28,62 @@ import {
   Bell,
   MessageSquare,
   User,
+  LayoutDashboard,
+  Building2,
+  Receipt,
 } from 'lucide-react-native';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-function MainTabs() {
-  const insets = useSafeAreaInsets();
+function getTabStyle(insets) {
   const bottomInset = Math.max(insets.bottom, Platform.OS === 'android' ? 12 : 8);
   const tabHeight = (Platform.OS === 'android' ? 66 : 58) + bottomInset;
 
+  return {
+    bottomInset,
+    screenOptions: {
+      headerShown: false,
+      tabBarActiveTintColor: colors.accent,
+      tabBarInactiveTintColor: colors.textMuted,
+      tabBarHideOnKeyboard: true,
+      tabBarStyle: {
+        backgroundColor: colors.surface,
+        borderTopColor: colors.border,
+        borderTopWidth: 1,
+        height: tabHeight,
+        paddingBottom: bottomInset,
+        paddingTop: 8,
+        elevation: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -3 },
+        shadowOpacity: 0.08,
+        shadowRadius: 5,
+      },
+      tabBarItemStyle: {
+        paddingHorizontal: 0,
+        paddingVertical: 2,
+        justifyContent: 'center',
+        alignItems: 'center',
+      },
+      tabBarIconStyle: {
+        marginBottom: 1,
+      },
+      tabBarLabelStyle: {
+        fontSize: 10,
+        fontWeight: '600',
+        marginTop: 1,
+      },
+    },
+  };
+}
+
+function GuardTabs() {
+  const insets = useSafeAreaInsets();
+  const { bottomInset, screenOptions } = getTabStyle(insets);
+
   return (
-    <Tab.Navigator
-      safeAreaInsets={{ bottom: bottomInset }}
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: colors.accent,
-        tabBarInactiveTintColor: colors.textMuted,
-        tabBarHideOnKeyboard: true,
-        tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
-          borderTopWidth: 1,
-          height: tabHeight,
-          paddingBottom: bottomInset,
-          paddingTop: 8,
-          elevation: 12,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: -3 },
-          shadowOpacity: 0.08,
-          shadowRadius: 5,
-        },
-        tabBarItemStyle: {
-          paddingHorizontal: 0,
-          paddingVertical: 2,
-          justifyContent: 'center',
-          alignItems: 'center',
-        },
-        tabBarIconStyle: {
-          marginBottom: 1,
-        },
-        tabBarLabelStyle: {
-          fontSize: 10,
-          fontWeight: '600',
-          marginTop: 1,
-        },
-      }}
-    >
+    <Tab.Navigator safeAreaInsets={{ bottom: bottomInset }} screenOptions={screenOptions}>
       <Tab.Screen
         name="Duties"
         component={MyDutiesScreen}
@@ -124,6 +136,74 @@ function MainTabs() {
   );
 }
 
+function SupervisorTabs() {
+  const insets = useSafeAreaInsets();
+  const { bottomInset, screenOptions } = getTabStyle(insets);
+
+  return (
+    <Tab.Navigator safeAreaInsets={{ bottom: bottomInset }} screenOptions={screenOptions}>
+      <Tab.Screen
+        name="Dashboard"
+        component={SupervisorDashboardScreen}
+        options={{
+          tabBarLabel: 'Dashboard',
+          tabBarIcon: ({ color }) => <LayoutDashboard size={19} color={color} />,
+        }}
+      />
+      <Tab.Screen
+        name="Incidents"
+        component={IncidentScreen}
+        options={{
+          tabBarLabel: 'Incidents',
+          tabBarIcon: ({ color }) => <AlertTriangle size={19} color={color} />,
+        }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{
+          tabBarLabel: 'Profile',
+          tabBarIcon: ({ color }) => <User size={19} color={color} />,
+        }}
+      />
+    </Tab.Navigator>
+  );
+}
+
+function ClientTabs() {
+  const insets = useSafeAreaInsets();
+  const { bottomInset, screenOptions } = getTabStyle(insets);
+
+  return (
+    <Tab.Navigator safeAreaInsets={{ bottom: bottomInset }} screenOptions={screenOptions}>
+      <Tab.Screen
+        name="Dashboard"
+        component={ClientDashboardScreen}
+        options={{
+          tabBarLabel: 'Dashboard',
+          tabBarIcon: ({ color }) => <Building2 size={19} color={color} />,
+        }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{
+          tabBarLabel: 'Profile',
+          tabBarIcon: ({ color }) => <User size={19} color={color} />,
+        }}
+      />
+    </Tab.Navigator>
+  );
+}
+
+function RoleRouter() {
+  const { role } = useAuth();
+
+  if (role === 'SUPERVISOR') return <SupervisorTabs />;
+  if (role === 'CLIENT') return <ClientTabs />;
+  return <GuardTabs />;
+}
+
 export default function AppNavigator() {
   const { isAuthenticated, needsConsent, loading } = useAuth();
 
@@ -152,7 +232,7 @@ export default function AppNavigator() {
           </>
         ) : (
           <>
-            <Stack.Screen name="Main" component={MainTabs} />
+            <Stack.Screen name="Main" component={RoleRouter} />
             <Stack.Screen name="Terms" component={TermsScreen} />
             <Stack.Screen name="Privacy" component={PrivacyScreen} />
           </>

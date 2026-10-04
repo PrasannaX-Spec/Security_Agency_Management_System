@@ -2,12 +2,17 @@
 
 from django.urls import path
 
+from rest_framework.routers import DefaultRouter
 from .views import (
     LoginView,
     CustomTokenRefreshView,
     MeView,
     AcceptTermsView,
+    SupervisorViewSet,
 )
+
+router = DefaultRouter()
+router.register(r"supervisors", SupervisorViewSet, basename="supervisor")
 
 urlpatterns = [
     path("login/", LoginView.as_view(), name="auth-login"),
@@ -18,4 +23,4 @@ urlpatterns = [
     path("me", MeView.as_view(), name="auth-me-noslash"),
     path("accept-terms/", AcceptTermsView.as_view(), name="auth-accept-terms"),
     path("accept-terms", AcceptTermsView.as_view(), name="auth-accept-terms-noslash"),
-]
+] + router.urls

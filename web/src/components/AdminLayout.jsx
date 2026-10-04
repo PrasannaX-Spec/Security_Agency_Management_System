@@ -7,17 +7,27 @@ import {
   Shield,
   LayoutDashboard,
   Users,
+  UserCheck,
+  Building2,
   MapPin,
+  ShieldAlert,
   Calendar,
   FileText,
+  DollarSign,
+  Receipt,
   LogOut,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
   { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/admin/clients', label: 'Clients', icon: Building2 },
+  { to: '/admin/supervisors', label: 'Supervisors', icon: UserCheck },
   { to: '/admin/guards', label: 'Guards', icon: Users },
   { to: '/admin/locations', label: 'Locations', icon: MapPin },
+  { to: '/admin/posts', label: 'Duty Posts', icon: ShieldAlert },
   { to: '/admin/schedules', label: 'Schedules', icon: Calendar },
+  { to: '/admin/payroll', label: 'Payroll', icon: DollarSign },
+  { to: '/admin/billing', label: 'Billing', icon: Receipt },
   { to: '/admin/reports', label: 'Reports', icon: FileText },
 ];
 

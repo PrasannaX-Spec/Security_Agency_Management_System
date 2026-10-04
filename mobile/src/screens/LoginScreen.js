@@ -47,10 +47,7 @@ export default function LoginScreen({ navigation }) {
     setError('');
 
     try {
-      const user = await login(username.trim(), password);
-      if (user.role !== 'GUARD') {
-        setError('This mobile application is intended for guard personnel only.');
-      }
+      await login(username.trim(), password);
     } catch (err) {
       setError(formatErrorMessage(err));
     } finally {

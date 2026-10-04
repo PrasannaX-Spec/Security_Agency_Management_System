@@ -30,6 +30,7 @@ class DutySchedule(models.Model):
         related_name="created_schedules",
     )
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "duty_schedules"

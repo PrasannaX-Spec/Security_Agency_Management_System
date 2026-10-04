@@ -29,6 +29,8 @@ CHECKS = [
     ("Em dash or en dash in text", r"[\u2013\u2014]", "FAIL"),
     ("Emoji or dingbat symbol (use the icon library)",
      "[\U0001F000-\U0001FAFF\u2600-\u27BF\uFE0F]", "FAIL"),
+    ("Exclamation mark in user-facing text",
+     r"""(?<!!)!(?!=)(?!important)(?!\s*\[)""", "REVIEW"),
     ("Gradient or purple-family color", r"gradient|purple|violet|fuchsia|indigo", "FAIL"),
     ("AI or site-builder tag",
      rf"made with ({AI_NAMES})|built with ({AI_NAMES})|(generated|created|powered) (by|with) ({AI_NAMES})"

@@ -1,43 +1,103 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
+import { getMe } from '../api/auth';
 import { colors } from '../theme/colors';
-import { User, LogOut } from 'lucide-react-native';
+import { User, LogOut, ShieldCheck, Building, Phone, Mail, BadgeCheck } from 'lucide-react-native';
 
 export default function ProfileScreen({ navigation }) {
-  const { user, logout } = useAuth();
+  const { user: initialUser, logout } = useAuth();
+  const [profile, setProfile] = useState(initialUser);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    async function fetchLiveProfile() {
+      setLoading(true);
+      try {
+        const liveData = await getMe();
+        if (liveData) setProfile(liveData);
+      } catch {
+        // Fallback to cached context user
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchLiveProfile();
+  }, []);
+
+  const getRoleDisplayName = (role) => {
+    switch (role) {
+      case 'ADMIN':
+        return 'System Administrator';
+      case 'SUPERVISOR':
+        return 'Field Supervisor';
+      case 'CLIENT':
+        return 'Client Portal User';
+      case 'GUARD':
+      default:
+        return 'Security Officer';
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={styles.title}>Guard Profile</Text>
-          <Text style={styles.subtitle}>Account details and session settings.</Text>
+          <Text style={styles.title}>User Profile</Text>
+          <Text style={styles.subtitle}>Verified account details and active operational session.</Text>
         </View>
 
         <View style={styles.card}>
           <View style={styles.avatarCircle}>
             <User size={32} color={colors.accent} />
           </View>
-          <Text style={styles.userName}>
-            {user?.first_name ? `${user.first_name} ${user.last_name}` : user?.username}
-          </Text>
-          <Text style={styles.userRole}>Security Guard · Active</Text>
+
+          {loading ? (
+            <ActivityIndicator size="small" color={colors.accent} style={{ marginVertical: 8 }} />
+          ) : (
+            <>
+              <Text style={styles.userName}>
+                {profile?.first_name || profile?.last_name
+                  ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim()
+                  : profile?.username}
+              </Text>
+              <View style={styles.roleBadge}>
+                <ShieldCheck size={12} color={colors.accent} />
+                <Text style={styles.userRole}>{getRoleDisplayName(profile?.role)}</Text>
+              </View>
+            </>
+          )}
+
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Account Status</Text>
+            <Text style={[styles.infoValue, { color: profile?.status === 'ACTIVE' ? '#10B981' : '#EF4444' }]}>
+              {profile?.status || 'ACTIVE'}
+            </Text>
+          </View>
 
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Username</Text>
-            <Text style={styles.infoValue}>{user?.username}</Text>
+            <Text style={styles.infoValue}>{profile?.username}</Text>
           </View>
 
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Phone</Text>
-            <Text style={styles.infoValue}>{user?.phone || 'Not provided'}</Text>
-          </View>
+          {profile?.email && (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Email</Text>
+              <Text style={styles.infoValue}>{profile.email}</Text>
+            </View>
+          )}
+
+          {profile?.phone && (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Phone</Text>
+              <Text style={styles.infoValue}>{profile.phone}</Text>
+            </View>
+          )}
 
           <View style={styles.linksRow}>
             <TouchableOpacity onPress={() => navigation.navigate('Terms')} activeOpacity={0.7}>
-              <Text style={styles.linkText}>Terms and Conditions</Text>
+              <Text style={styles.linkText}>Terms of Service</Text>
             </TouchableOpacity>
             <Text style={styles.divider}>·</Text>
             <TouchableOpacity onPress={() => navigation.navigate('Privacy')} activeOpacity={0.7}>
@@ -101,12 +161,21 @@ const styles = StyleSheet.create({
     color: colors.text,
     textAlign: 'center',
   },
+  roleBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    marginTop: 6,
+    marginBottom: 16,
+  },
   userRole: {
-    fontSize: 13,
-    color: colors.textMuted,
-    marginTop: 2,
-    marginBottom: 18,
-    textAlign: 'center',
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.accent,
   },
   infoRow: {
     flexDirection: 'row',

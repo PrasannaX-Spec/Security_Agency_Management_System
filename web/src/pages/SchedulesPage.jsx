@@ -24,9 +24,9 @@ export default function SchedulesPage() {
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-md bg-background text-text-muted mb-3">
           <Calendar size={24} />
         </div>
-        <div className="text-sm font-medium text-text">Schedule Calendar Shell</div>
+        <div className="text-sm font-medium text-text">Duty Scheduling</div>
         <div className="text-xs text-text-muted mt-1 max-w-sm mx-auto">
-          Weekly shift roster with strict overlap prevention will be linked in Phase 2.
+          No data yet
         </div>
       </div>
     </div>

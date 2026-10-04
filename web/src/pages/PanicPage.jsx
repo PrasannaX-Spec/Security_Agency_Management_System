@@ -15,9 +15,9 @@ export default function PanicPage() {
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-md bg-background text-text-muted mb-3">
           <Bell size={24} />
         </div>
-        <div className="text-sm font-medium text-text">Panic Dispatch Shell</div>
+        <div className="text-sm font-medium text-text">Panic Dispatch</div>
         <div className="text-xs text-text-muted mt-1 max-w-sm mx-auto">
-          Emergency response dispatch and acknowledgment actions will be linked in Phase 3.
+          No data yet
         </div>
       </div>
     </div>

@@ -78,7 +78,9 @@ Web App (Admin / Supervisor: React) ─┘        │
 - [x] Mobile guard app initialized with Expo, navigation stack, login, consent screen, and background location configuration.
 - [x] Static rule checker (`scripts/check_ui_rules.py`) passing with zero failures.
 
-## Quick Start
+## Quick Start & Agent Bootstrapping
+
+> **Comprehensive Setup Guide:** For detailed step-by-step commands, environment variables, default credentials, and agent verification steps on new machines, see **[SETUP_GUIDE.md](file:///e:/Security_Agency_Monitoring%20_system/SETUP_GUIDE.md)**.
 
 ### 1. Backend
 

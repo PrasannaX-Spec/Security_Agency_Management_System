@@ -6,6 +6,11 @@ import Terms from '../pages/Terms';
 import Privacy from '../pages/Privacy';
 import AdminLayout from '../components/AdminLayout';
 import AdminDashboard from '../pages/AdminDashboard';
+import ClientsPage from '../pages/ClientsPage';
+import SupervisorsPage from '../pages/SupervisorsPage';
+import PostsPage from '../pages/PostsPage';
+import PayrollPage from '../pages/PayrollPage';
+import BillingPage from '../pages/BillingPage';
 import GuardsPage from '../pages/GuardsPage';
 import LocationsPage from '../pages/LocationsPage';
 import SchedulesPage from '../pages/SchedulesPage';
@@ -62,9 +67,14 @@ export default function AppRoutes() {
       >
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<AdminDashboard />} />
+        <Route path="clients" element={<ClientsPage />} />
+        <Route path="supervisors" element={<SupervisorsPage />} />
         <Route path="guards" element={<GuardsPage />} />
         <Route path="locations" element={<LocationsPage />} />
+        <Route path="posts" element={<PostsPage />} />
         <Route path="schedules" element={<SchedulesPage />} />
+        <Route path="payroll" element={<PayrollPage />} />
+        <Route path="billing" element={<BillingPage />} />
         <Route path="reports" element={<ReportsPage />} />
       </Route>
 
