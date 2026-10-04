@@ -24,6 +24,13 @@ class IsClient(BasePermission):
         return request.user.is_authenticated and request.user.role == "CLIENT"
 
 
+class IsGuard(BasePermission):
+    """Allow access only to users with the GUARD role."""
+
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.role == "GUARD"
+
+
 class IsAdminOrSupervisor(BasePermission):
     """Allow access to ADMIN or SUPERVISOR roles."""
 
